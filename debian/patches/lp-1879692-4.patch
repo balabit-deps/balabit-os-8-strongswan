@@ -1,0 +1,42 @@
+From d5cf2d1f8549a3492916dab3178fba50030e8884 Mon Sep 17 00:00:00 2001
+From: Tobias Brunner <tobias@strongswan.org>
+Date: Wed, 29 Jan 2020 10:02:38 +0100
+Subject: [PATCH] tls-crypto: Fix usage of chunk_from_chars()
+
+See 8ea13bbc5ccd for details.
+
+References #3249.
+
+Origin: upstream, https://git.strongswan.org/?p=strongswan.git;a=commitdiff;h=d5cf2d1f8549a3492916dab3178fba50030e8884
+Reviewed-By: Lucas Kanashiro <kanashiro@ubuntu.com>
+Last-Updated: 2020-05-22
+---
+ src/libtls/tls_crypto.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/src/libtls/tls_crypto.c b/src/libtls/tls_crypto.c
+index 0ec2f5c..ebadb91 100644
+--- a/src/libtls/tls_crypto.c
++++ b/src/libtls/tls_crypto.c
+@@ -1409,6 +1409,8 @@ METHOD(tls_crypto_t, sign, bool,
+ {
+ 	if (this->tls->get_version(this->tls) >= TLS_1_2)
+ 	{
++		const chunk_t hashsig_def = chunk_from_chars(
++					TLS_HASH_SHA1, TLS_SIG_RSA, TLS_HASH_SHA1, TLS_SIG_ECDSA);
+ 		signature_scheme_t scheme;
+ 		bio_reader_t *reader;
+ 		uint8_t hash, alg;
+@@ -1417,8 +1419,7 @@ METHOD(tls_crypto_t, sign, bool,
+ 
+ 		if (!hashsig.len)
+ 		{	/* fallback if none given */
+-			hashsig = chunk_from_chars(
+-				TLS_HASH_SHA1, TLS_SIG_RSA, TLS_HASH_SHA1, TLS_SIG_ECDSA);
++			hashsig = hashsig_def;
+ 		}
+ 		reader = bio_reader_create(hashsig);
+ 		while (reader->remaining(reader) >= 2)
+-- 
+2.7.4
+

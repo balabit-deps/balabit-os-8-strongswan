@@ -1,0 +1,10 @@
+01_fix-manpages.patch
+02_disable-bypass-lan.patch
+03_systemd-service.patch
+04_disable-libtls-tests.patch
+dont-load-kernel-libipsec-plugin-by-default.patch
+lp-1879692-1.patch
+lp-1879692-2.patch
+lp-1879692-3.patch
+lp-1879692-4.patch
+lp-1879692-5.patch

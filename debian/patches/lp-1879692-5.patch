@@ -1,0 +1,111 @@
+From 8ea13bbc5ccdb7a67e5b2c0e0465d432dd24614b Mon Sep 17 00:00:00 2001
+From: Tobias Brunner <tobias@strongswan.org>
+Date: Mon, 27 Jan 2020 15:16:51 +0100
+Subject: [PATCH] lgtm: Add query to detect problematic uses of
+ chunk_from_chars()
+
+GCC 9+ and clang 4+ (partially) optimize out usages of
+chunk_from_chars() if the value is read outside of the block where the
+macro is used.  For instance:
+
+```
+chunk_t chunk = chunk_empty;
+if (...)
+{
+	chunk = chunk_from_chars(0x01, 0x06);
+}
+/* do something with chunk */
+```
+
+The chunk_from_chars() macro expands to a chunk_t declaration, which is
+technically only defined inside that block.
+
+Still, with older GCC versions the fourth line was compiled to something
+like this:
+
+```
+mov     WORD PTR [rsp+14], 1537 # 0x0106 in little-endian
+lea     rdx, [rsp+14]
+mov     ecx, 2
+```
+
+However, with GCC 9.1 and -O2 the first instruction might be omitted
+(strangely the others usually were not, so the chunk pointed to whatever
+was stored on the stack).  It's not easily reproducible, so there are
+situations where the seemingly identical code is not optimized in this
+way.
+
+This query should detect such problematic uses of the macro (definition
+and usage in different blocks).
+
+References #3249.
+
+Origin: upstream, https://git.strongswan.org/?p=strongswan.git;a=commitdiff;h=8ea13bbc5ccdb7a67e5b2c0e0465d432dd24614b
+Reviewed-By: Lucas Kanashiro <kanashiro@ubuntu.com>
+Last-Updated: 2020-05-22
+
+---
+ .lgtm/cpp-queries/chunk_from_chars.ql | 51 +++++++++++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+ create mode 100644 .lgtm/cpp-queries/chunk_from_chars.ql
+
+diff --git a/.lgtm/cpp-queries/chunk_from_chars.ql b/.lgtm/cpp-queries/chunk_from_chars.ql
+new file mode 100644
+index 0000000..c393e7e
+--- /dev/null
++++ b/.lgtm/cpp-queries/chunk_from_chars.ql
+@@ -0,0 +1,51 @@
++/**
++ * @name Invalid use of chunk_from_chars() macro
++ * @description The chunk_from_chars() macro creates a temporary chunk_t, which
++ *              is not defined outside of the block in which it has been used,
++ *              therefore, compilers might optimize out the assignment.
++ * @kind path-problem
++ * @problem.severity error
++ * @id strongswan/invalid-chunk-from-chars
++ * @tags correctness
++ * @precision very-high
++ */
++import cpp
++import DataFlow::PathGraph
++import semmle.code.cpp.dataflow.DataFlow
++
++class ChunkFromChars extends Expr {
++  ChunkFromChars() {
++    this = any(MacroInvocation mi |
++      mi.getOutermostMacroAccess().getMacroName() = "chunk_from_chars"
++      /* ignore global static uses of the macro */
++      and exists (Block b | mi.getExpr().getEnclosingBlock() = b)
++    ).getExpr()
++  }
++}
++
++class ChunkFromCharsUsage extends DataFlow::Configuration {
++  ChunkFromCharsUsage() { this = "ChunkFromCharsUsage" }
++
++  override predicate isSource(DataFlow::Node source) {
++    source.asExpr() instanceof ChunkFromChars
++  }
++
++  override predicate isSink(DataFlow::Node sink) {
++    exists(sink.asExpr())
++  }
++
++  override predicate isBarrierOut(DataFlow::Node node) {
++    /* don't track beyond function calls */
++    exists(FunctionCall fc | node.asExpr().getParent*() = fc)
++  }
++}
++
++Block enclosingBlock(Block b) {
++  result = b.getEnclosingBlock()
++}
++
++from ChunkFromCharsUsage usage, DataFlow::PathNode source, DataFlow::PathNode sink
++where
++  usage.hasFlowPath(source, sink)
++  and not source.getNode().asExpr().getEnclosingBlock() = enclosingBlock*(sink.getNode().asExpr().getEnclosingBlock())
++select source, source, sink, "Invalid use of chunk_from_chars() result in sibling/parent block."
+-- 
+2.7.4
+

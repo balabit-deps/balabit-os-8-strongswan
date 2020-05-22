@@ -1,0 +1,50 @@
+From 776433505b8581866010c2c82bf7611f4f0946e8 Mon Sep 17 00:00:00 2001
+From: Tobias Brunner <tobias@strongswan.org>
+Date: Wed, 29 Jan 2020 11:12:12 +0100
+Subject: [PATCH] x509: Replace problematic calls of chunk_from_chars() for
+ keyUsage extension
+
+As noted in 8ea13bbc5ccd newer compilers might optimize out the
+assignment leading to invalid values in the keyUsage extension (as the
+length was still set, the extension was encoded, just not with the
+intended values).
+
+Fixes #3249.
+
+Origin: upstream, https://git.strongswan.org/?p=strongswan.git;a=commitdiff;h=776433505b8581866010c2c82bf7611f4f0946e8
+Reviewed-By: Lucas Kanashiro <kanashiro@ubuntu.com>
+Last-Updated: 2020-05-22
+---
+ src/libstrongswan/plugins/x509/x509_cert.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/src/libstrongswan/plugins/x509/x509_cert.c b/src/libstrongswan/plugins/x509/x509_cert.c
+index 7311708..5a3f838 100644
+--- a/src/libstrongswan/plugins/x509/x509_cert.c
++++ b/src/libstrongswan/plugins/x509/x509_cert.c
+@@ -2198,6 +2198,8 @@ static chunk_t generate_ts(traffic_selector_t *ts)
+ static bool generate(private_x509_cert_t *cert, certificate_t *sign_cert,
+ 					 private_key_t *sign_key, int digest_alg)
+ {
++	const chunk_t keyUsageCrlSign = chunk_from_chars(0x01, 0x02);
++	const chunk_t keyUsageCertSignCrlSign = chunk_from_chars(0x01, 0x06);
+ 	chunk_t extensions = chunk_empty, extendedKeyUsage = chunk_empty;
+ 	chunk_t serverAuth = chunk_empty, clientAuth = chunk_empty;
+ 	chunk_t ocspSigning = chunk_empty, certPolicies = chunk_empty;
+@@ -2317,11 +2319,11 @@ static bool generate(private_x509_cert_t *cert, certificate_t *sign_cert,
+ 												chunk_from_chars(0xFF)),
+ 											pathLenConstraint)));
+ 		/* set CertificateSign and implicitly CRLsign */
+-		keyUsageBits = chunk_from_chars(0x01, 0x06);
++		keyUsageBits = keyUsageCertSignCrlSign;
+ 	}
+ 	else if (cert->flags & X509_CRL_SIGN)
+ 	{
+-		keyUsageBits = chunk_from_chars(0x01, 0x02);
++		keyUsageBits = keyUsageCrlSign;
+ 	}
+ 	if (keyUsageBits.len)
+ 	{
+-- 
+2.7.4
+

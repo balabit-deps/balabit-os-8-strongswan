@@ -1,0 +1,75 @@
+From ef4113a49dbf3d0315d5c3e486a3717dda5f4c7c Mon Sep 17 00:00:00 2001
+From: Tobias Brunner <tobias@strongswan.org>
+Date: Wed, 29 Jan 2020 11:22:07 +0100
+Subject: [PATCH] libtpmtss: Fix problematic usage of chunk_from_chars() in
+ TSS2 implementations
+
+See 8ea13bbc5ccd for details.
+
+References #3249.
+
+Origin: upstream, https://git.strongswan.org/?p=strongswan.git;a=commitdiff;h=ef4113a49dbf3d0315d5c3e486a3717dda5f4c7c
+Reviewed-By: Lucas Kanashiro <kanashiro@ubuntu.com>
+Last-Updated: 2020-05-22
+---
+ src/libtpmtss/tpm_tss_tss2_v1.c | 9 +++------
+ src/libtpmtss/tpm_tss_tss2_v2.c | 9 +++------
+ 2 files changed, 6 insertions(+), 12 deletions(-)
+
+diff --git a/src/libtpmtss/tpm_tss_tss2_v1.c b/src/libtpmtss/tpm_tss_tss2_v1.c
+index fb26d05..31465da 100644
+--- a/src/libtpmtss/tpm_tss_tss2_v1.c
++++ b/src/libtpmtss/tpm_tss_tss2_v1.c
+@@ -494,7 +494,8 @@ METHOD(tpm_tss_t, get_public, chunk_t,
+ 		{
+ 			TPM2B_PUBLIC_KEY_RSA *rsa;
+ 			TPMT_RSA_SCHEME *scheme;
+-			chunk_t aik_exponent, aik_modulus;
++			chunk_t aik_exponent = chunk_from_chars(0x01, 0x00, 0x01);
++			chunk_t aik_modulus;
+ 			uint32_t exponent;
+ 
+ 			scheme = &public.t.publicArea.parameters.rsaDetail.scheme;
+@@ -504,11 +505,7 @@ METHOD(tpm_tss_t, get_public, chunk_t,
+ 			rsa = &public.t.publicArea.unique.rsa;
+ 			aik_modulus = chunk_create(rsa->t.buffer, rsa->t.size);
+ 			exponent = htonl(public.t.publicArea.parameters.rsaDetail.exponent);
+-			if (!exponent)
+-			{
+-				aik_exponent = chunk_from_chars(0x01, 0x00, 0x01);
+-			}
+-			else
++			if (exponent)
+ 			{
+ 				aik_exponent = chunk_from_thing(exponent);
+ 			}
+diff --git a/src/libtpmtss/tpm_tss_tss2_v2.c b/src/libtpmtss/tpm_tss_tss2_v2.c
+index c5d78d6..fef32e1 100644
+--- a/src/libtpmtss/tpm_tss_tss2_v2.c
++++ b/src/libtpmtss/tpm_tss_tss2_v2.c
+@@ -448,7 +448,8 @@ METHOD(tpm_tss_t, get_public, chunk_t,
+ 		{
+ 			TPM2B_PUBLIC_KEY_RSA *rsa;
+ 			TPMT_RSA_SCHEME *scheme;
+-			chunk_t aik_exponent, aik_modulus;
++			chunk_t aik_exponent = chunk_from_chars(0x01, 0x00, 0x01);
++			chunk_t aik_modulus;
+ 			uint32_t exponent;
+ 
+ 			scheme = &public.publicArea.parameters.rsaDetail.scheme;
+@@ -458,11 +459,7 @@ METHOD(tpm_tss_t, get_public, chunk_t,
+ 			rsa = &public.publicArea.unique.rsa;
+ 			aik_modulus = chunk_create(rsa->buffer, rsa->size);
+ 			exponent = htonl(public.publicArea.parameters.rsaDetail.exponent);
+-			if (!exponent)
+-			{
+-				aik_exponent = chunk_from_chars(0x01, 0x00, 0x01);
+-			}
+-			else
++			if (exponent)
+ 			{
+ 				aik_exponent = chunk_from_thing(exponent);
+ 			}
+-- 
+2.7.4
+
