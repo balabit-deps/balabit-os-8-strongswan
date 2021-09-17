@@ -1,3 +1,12 @@
+strongswan (5.8.2-1ubuntu3.2) focal; urgency=medium
+
+  * Compile the tpm plugin against the tpm2 software stack (tss2)
+    (Debian packaging cherry-pick, LP: #1940079)
+    - d/rules: add the --enable-tss-tss2 configure flag
+    - d/control: add Build-Depends: libtss2-dev
+
+ -- Paride Legovini <paride@ubuntu.com>  Fri, 17 Sep 2021 10:48:56 +0200
+
 strongswan (5.8.2-1ubuntu3.1) focal; urgency=medium
 
   * Re-enable eap-{dynamic,peap} libcharon plugins (LP: #1878887)
