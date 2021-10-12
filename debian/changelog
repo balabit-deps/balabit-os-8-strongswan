@@ -1,3 +1,19 @@
+strongswan (5.8.2-1ubuntu3.3) focal-security; urgency=medium
+
+  * SECURITY UPDATE: Integer Overflow in gmp Plugin
+    - debian/patches/CVE-2021-41990.patch: reject RSASSA-PSS params with
+      negative salt length in
+      src/libstrongswan/credentials/keys/signature_params.c,
+      src/libstrongswan/plugins/gmp/gmp_rsa_public_key.c.
+    - CVE-2021-41990
+  * SECURITY UPDATE: Integer Overflow When Replacing Certificates in Cache
+    - debian/patches/CVE-2021-41991.patch: prevent crash due to integer
+      overflow/sign change in
+      src/libstrongswan/credentials/sets/cert_cache.c.
+    - CVE-2021-41991
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 12 Oct 2021 13:22:57 -0400
+
 strongswan (5.8.2-1ubuntu3.2) focal; urgency=medium
 
   * Compile the tpm plugin against the tpm2 software stack (tss2)
