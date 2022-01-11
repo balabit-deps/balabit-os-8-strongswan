@@ -1,3 +1,16 @@
+strongswan (5.8.2-1ubuntu3.4) focal-security; urgency=medium
+
+  * SECURITY UPDATE: Incorrect Handling of Early EAP-Success Messages
+    - debian/patches/CVE-2021-45079.patch: enforce failure if MSK
+      generation fails in src/libcharon/plugins/eap_gtc/eap_gtc.c,
+      src/libcharon/plugins/eap_md5/eap_md5.c,
+      src/libcharon/plugins/eap_radius/eap_radius.c,
+      src/libcharon/sa/eap/eap_method.h,
+      src/libcharon/sa/ikev2/authenticators/eap_authenticator.c.
+    - CVE-2021-45079
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 11 Jan 2022 07:10:45 -0500
+
 strongswan (5.8.2-1ubuntu3.3) focal-security; urgency=medium
 
   * SECURITY UPDATE: Integer Overflow in gmp Plugin
