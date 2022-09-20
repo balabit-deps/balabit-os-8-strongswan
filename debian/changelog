@@ -1,3 +1,13 @@
+strongswan (5.8.2-1ubuntu3.5) focal-security; urgency=medium
+
+  * SECURITY UPDATE: Using Untrusted URIs for Revocation Checking
+    - debian/patches/CVE-2022-40617.patch: do online revocation checks only
+      after basic trust chain validation in
+      src/libstrongswan/credentials/credential_manager.c.
+    - CVE-2022-40617
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 20 Sep 2022 14:10:02 -0400
+
 strongswan (5.8.2-1ubuntu3.4) focal-security; urgency=medium
 
   * SECURITY UPDATE: Incorrect Handling of Early EAP-Success Messages
